@@ -38,13 +38,9 @@
 - ✅ `npx cap init` → capacitor.config.json créé
 - ✅ `npx cap add android` → dossier android/ créé
 - ✅ `npx cap sync android` → assets synchronisés
-- ✅ dist/ → android/app/src/main/assets/public/
-- ⚠️ APK non générable : JAVA_HOME non configuré dans ce conteneur
-- L'environnement actuel n'a pas Java/JDK
-- **Action requise :** Générer l'APK sur machine locale avec Android Studio
-- Fichier à attendre : `android/app/build/outputs/apk/debug/app-debug.apk`
-
-**capaci
+- ✅ Workflow GitHub Actions créé : `.github/workflows/android-debug-apk.yml`
+- ✅ Code poussé sur GitHub : `github.com/Seth-opx/mech-ai-diagnostics`
+- ⏳ APK à générer via GitHub Actions (Seth depuis tablette)
 
 ### Étape 4 — APK Debug
 - [ ] Générer APK sur machine locale (JAVA requis)
