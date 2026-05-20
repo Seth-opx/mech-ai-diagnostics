@@ -9,6 +9,13 @@ const MOCK_USER = {
   getIdToken: async () => 'mock-token'
 }
 
+function withTimeout(promise, ms = 2500) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout initialisation Firebase')), ms))
+  ])
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -18,36 +25,44 @@ export function AuthProvider({ children }) {
     let cancelled = false
     let unsubscribe = null
 
+    async function activateMock(reason) {
+      console.warn('Mode démo activé:', reason?.message || reason || 'Firebase non configuré')
+      if (cancelled) return
+      setMockMode(true)
+      setUser(MOCK_USER)
+      setLoading(false)
+    }
+
     async function init() {
       if (import.meta.env.VITE_FORCE_MOCK === 'true') {
-        if (!cancelled) {
-          setMockMode(true)
-          setUser(MOCK_USER)
-          setLoading(false)
-        }
+        await activateMock('VITE_FORCE_MOCK=true')
         return
       }
 
       try {
-        const firebase = await import('../services/firebase.js')
-        const { onAuthStateChanged } = await import('firebase/auth')
-        const auth = await firebase.getAuthInstance()
+        const [{ onAuthStateChanged }, firebase] = await withTimeout(Promise.all([
+          import('firebase/auth'),
+          import('../services/firebase.js')
+        ]))
 
-        if (!auth) throw new Error('Firebase non configuré')
-
-        unsubscribe = onAuthStateChanged(auth, firebaseUser => {
-          if (cancelled) return
-          setUser(firebaseUser || null)
-          setMockMode(false)
-          setLoading(false)
-        })
-      } catch (error) {
-        console.warn('Mode démo activé:', error?.message)
-        if (!cancelled) {
-          setMockMode(true)
-          setUser(MOCK_USER)
-          setLoading(false)
+        const auth = await withTimeout(firebase.getAuthInstance())
+        if (!auth) {
+          await activateMock('Firebase env manquant')
+          return
         }
+
+        unsubscribe = onAuthStateChanged(
+          auth,
+          firebaseUser => {
+            if (cancelled) return
+            setUser(firebaseUser || MOCK_USER)
+            setMockMode(!firebaseUser)
+            setLoading(false)
+          },
+          error => activateMock(error)
+        )
+      } catch (error) {
+        await activateMock(error)
       }
     }
 
