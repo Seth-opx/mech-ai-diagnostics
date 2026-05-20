@@ -1,8 +1,8 @@
-export function LoadingSpinner({ message = 'Chargement...' }) {
+export default function LoadingSpinner({ label = 'Chargement...' }) {
   return (
-    <div style={{ textAlign: 'center', padding: '40px' }}>
+    <div style={{ textAlign: 'center', padding: 24 }}>
       <div className="spinner" />
-      <p style={{ marginTop: '16px', color: 'var(--text-muted)' }}>{message}</p>
+      <p>{label}</p>
     </div>
   )
 }
