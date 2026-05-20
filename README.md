@@ -15,24 +15,17 @@ Diagnostic IA pour automobiles et motorcycles.
 ## Installation
 
 ```bash
+git clone https://github.com/Seth-opx/mech-ai-diagnostics.git
+cd mech-ai-diagnostics
 npm install
-cp .env.example .env
-# Editer .env avec vos vraies valeurs
 npm run dev
 ```
 
-## Build
+## Build APK (via GitHub Actions)
 
-```bash
-npm run build
-```
-
-## Capacitor
-
-```bash
-npm install @capacitor/core @capacitor/cli @capacitor/android
-npx cap init "Méco-IA" "com.mecoia.app" --web-dir=dist
-npx cap add android
-npm run build && npx cap sync android
-npx cap open android
-```
+1. Aller sur : https://github.com/Seth-opx/mech-ai-diagnostics/actions
+2. Cliquer sur "Build Android Debug APK"
+3. Cliquer "Run workflow" (branch: main)
+4. Attendre ~5 minutes
+5. Télécharger l'artifact `mecoia-debug-apk`
+6. Installer le fichier APK sur le téléphone
