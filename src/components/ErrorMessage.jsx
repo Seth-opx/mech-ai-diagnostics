@@ -1,7 +1,4 @@
-export function ErrorMessage({ message }) {
-  return (
-    <div className="error-box">
-      {message || 'Une erreur est survenue'}
-    </div>
-  )
+export default function ErrorMessage({ message }) {
+  if (!message) return null
+  return <div className="error-box">{message}</div>
 }
