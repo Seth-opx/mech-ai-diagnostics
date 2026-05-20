@@ -1,59 +1,30 @@
-import { Component } from 'react'
+import React from 'react'
 
-export default class ErrorBoundary extends Component {
+export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { hasError: false, message: '' }
+    this.state = { hasError: false, error: null }
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, message: error?.message || 'Erreur inconnue' }
+    return { hasError: true, error }
   }
 
   componentDidCatch(error, info) {
-    console.error('ErrorBoundary caught:', error, info)
-  }
-
-  reload = () => {
-    this.setState({ hasError: false, message: '' })
-    window.location.reload()
+    console.error('Erreur React:', error, info)
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{
-          minHeight: '100vh',
-          background: '#1a1a2e',
-          color: 'white',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '40px',
-          textAlign: 'center',
-          fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
-        }}>
-          <div style={{ fontSize: '3rem', marginBottom: '20px' }}>⚠️</div>
-          <h1 style={{ fontSize: '1.5rem', marginBottom: '12px' }}>Erreur de chargement</h1>
-          <p style={{ color: '#ff6b6b', marginBottom: '24px', fontSize: '0.9rem' }}>
-            {this.state.message}
-          </p>
-          <button
-            onClick={this.reload}
-            style={{
-              background: '#e94560',
-              color: 'white',
-              border: 'none',
-              padding: '14px 28px',
-              borderRadius: '12px',
-              fontSize: '1rem',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            🔄 Recharger
-          </button>
+        <div className="center-screen">
+          <div className="card" style={{ maxWidth: 460, textAlign: 'center' }}>
+            <h2>Une erreur est survenue</h2>
+            <p style={{ marginBottom: 16 }}>{this.state.error?.message || 'Erreur inconnue'}</p>
+            <button className="btn-primary" onClick={() => window.location.reload()}>
+              Relancer l'application
+            </button>
+          </div>
         </div>
       )
     }
