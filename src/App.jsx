@@ -1,40 +1,33 @@
-import { Routes, Route } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
-import { AppProvider } from './context/AppContext'
-import Splash from './screens/Splash'
-import Login from './screens/Login'
-import Dashboard from './screens/Dashboard'
-import CapturePhoto from './screens/CapturePhoto'
-import CaptureVideo from './screens/CaptureVideo'
-import Analysis from './screens/Analysis'
-import Result from './screens/Result'
-import History from './screens/History'
-import Chat from './screens/Chat'
-import Garages from './screens/Garages'
-import Profile from './screens/Profile'
-import Paywall from './screens/Paywall'
-import Debug from './screens/Debug'
-
+// Minimal test App — replace App.jsx temporarily to test APK
 export default function App() {
   return (
-    <AuthProvider>
-      <AppProvider>
-        <Routes>
-          <Route path="/" element={<Splash />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/capture" element={<CapturePhoto />} />
-          <Route path="/capture-video" element={<CaptureVideo />} />
-          <Route path="/analysis" element={<Analysis />} />
-          <Route path="/result" element={<Result />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/garages" element={<Garages />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/paywall" element={<Paywall />} />
-          <Route path="/debug" element={<Debug />} />
-        </Routes>
-      </AppProvider>
-    </AuthProvider>
+    <div style={{
+      minHeight: '100vh',
+      background: '#1a1a2e',
+      color: 'white',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+      textAlign: 'center',
+      fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+    }}>
+      <h1>Méco-IA</h1>
+      <p>APK debug lancé avec succès</p>
+      <button style={{
+        marginTop: 20,
+        padding: '14px 22px',
+        borderRadius: 12,
+        border: 'none',
+        background: '#e94560',
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: '1rem',
+        cursor: 'pointer'
+      }}>
+        Entrer dans l'app
+      </button>
+    </div>
   )
 }
