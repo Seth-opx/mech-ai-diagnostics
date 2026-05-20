@@ -1,20 +1,43 @@
-// Firebase configuration — graceful fallback when env vars are missing
-import { initializeApp } from 'firebase/app'
+import { initializeApp, getApps } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-key',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'demo.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'demo',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'demo.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '000000',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:000000:web:000000',
+let app = null
+let auth = null
+
+function hasFirebaseConfig() {
+  return Boolean(
+    import.meta.env.VITE_FIREBASE_API_KEY &&
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN &&
+    import.meta.env.VITE_FIREBASE_PROJECT_ID &&
+    import.meta.env.VITE_FIREBASE_APP_ID
+  )
 }
 
-// Always initialize Firebase — it will work even with placeholder values
-const app = initializeApp(firebaseConfig)
-const auth = getAuth(app)
+export async function getFirebaseApp() {
+  if (app) return app
+  if (!hasFirebaseConfig()) return null
+
+  const config = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
+  }
+
+  app = getApps().length ? getApps()[0] : initializeApp(config)
+  return app
+}
+
+export async function getAuthInstance() {
+  if (auth) return auth
+
+  const firebaseApp = await getFirebaseApp()
+  if (!firebaseApp) return null
+
+  auth = getAuth(firebaseApp)
+  return auth
+}
 
 export { app, auth }
-export const isFirebaseConfigured = !!(import.meta.env.VITE_FIREBASE_API_KEY &&
-  import.meta.env.VITE_FIREBASE_API_KEY !== 'demo-key')
