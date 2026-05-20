@@ -1,14 +1,8 @@
-// AdMob service (placeholder - to be implemented after UX stable)
 export async function initAdMob() {
-  console.log('AdMob init (placeholder)')
-  return { isConfigured: false }
-}
-
-export async function showBanner() {
-  console.log('Banner (placeholder)')
+  return { available: false, mock: true }
 }
 
 export async function showRewardedAd() {
-  console.log('Rewarded ad (placeholder)')
-  return { earned: false }
+  await new Promise(resolve => setTimeout(resolve, 700))
+  return { rewarded: true, mock: true }
 }
