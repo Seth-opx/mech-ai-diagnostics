@@ -1,13 +1,20 @@
-import { Header } from '../components/Header'
-
 export default function Garages() {
   return (
-    <div className="screen">
-      <Header title=" Garage" />
-      <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
-        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🔧</div>
-        <p style={{ color: 'var(--text-muted)' }}>Annuaire garages à venir</p>
+    <main className="screen">
+      <h2>Garages proches</h2>
+      <div className="card">
+        <p>
+          La géolocalisation et la recherche de garages peuvent être connectées ensuite à Google Places,
+          Apple Maps ou une base Supabase.
+        </p>
       </div>
-    </div>
+      {['Garage Central', 'Auto Service Express', 'Mécanique Pro'].map((name, index) => (
+        <div className="card" key={name}>
+          <h3>{name}</h3>
+          <p>{index + 1}. Diagnostic, entretien, réparation.</p>
+          <button className="btn-secondary" style={{ marginTop: 10 }}>Voir détails</button>
+        </div>
+      ))}
+    </main>
   )
 }
