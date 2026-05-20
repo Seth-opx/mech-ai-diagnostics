@@ -1,13 +1,19 @@
-// RevenueCat service (placeholder - to be implemented after APK stable)
 export async function initRevenueCat() {
-  console.log('RevenueCat init (placeholder)')
-  return { isConfigured: false }
+  return { available: false, mock: true }
 }
 
-export async function checkPremiumStatus() {
-  return { isPremium: false, entitlement: null }
+export async function getCustomerInfo() {
+  return {
+    activeSubscriptions: [],
+    entitlements: { active: {} },
+    mock: true
+  }
 }
 
-export async function purchasePackage(packageId) {
-  throw new Error('RevenueCat not configured yet')
+export async function purchasePremium() {
+  return {
+    success: true,
+    premium: true,
+    mock: true
+  }
 }
