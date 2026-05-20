@@ -2,6 +2,15 @@ import { createContext, useContext, useMemo, useState } from 'react'
 
 const AppContext = createContext(null)
 
+function createId() {
+  try {
+    if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
+  } catch {
+    // fallback below
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
 export function AppProvider({ children }) {
   const [credits, setCredits] = useState(2)
   const [isPremium, setIsPremium] = useState(false)
@@ -22,7 +31,7 @@ export function AppProvider({ children }) {
 
   function addToHistory(diagnosis) {
     const item = {
-      id: crypto?.randomUUID?.() || String(Date.now()),
+      id: createId(),
       date: new Date().toISOString(),
       ...diagnosis
     }
