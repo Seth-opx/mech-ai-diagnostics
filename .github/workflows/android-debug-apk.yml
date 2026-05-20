@@ -24,18 +24,18 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        env:
-          NODE_ENV: development
 
       - name: Build React app
         run: npm run build
-        env:
-          NODE_ENV: development
+
+      - name: Add Android platform if missing
+        run: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
 
       - name: Sync Capacitor Android
-        run: |
-          npx cap add android || true
-          npx cap sync android
+        run: npx cap sync android
 
       - name: Make Gradle executable
         run: chmod +x android/gradlew
