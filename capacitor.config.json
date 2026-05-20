@@ -1,5 +1,19 @@
 {
-  "appId": "com.mecoia.app",
+  "appId": "app.mecoia.mobile",
   "appName": "Méco-IA",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#1a1a2e",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#1a1a2e"
+    }
+  }
 }
