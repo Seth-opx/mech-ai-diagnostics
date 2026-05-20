@@ -1,48 +1,63 @@
-import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { LoadingSpinner } from '../components/LoadingSpinner'
-import { ErrorMessage } from '../components/ErrorMessage'
-import { diagnoseImage } from '../services/diagnoseApi'
-import { useAuth } from '../context/AuthContext'
-import { useApp } from '../context/AppContext'
+import { useState } from 'react'
+import { diagnoseVehicle } from '../services/diagnoseApi.js'
+import { saveDiagnosis } from '../services/supabase.js'
+import { useApp } from '../context/AppContext.jsx'
+import { SCREENS } from '../utils/constants.js'
+import ErrorMessage from '../components/ErrorMessage.jsx'
+import PrimaryButton from '../components/PrimaryButton.jsx'
 
-export default function Analysis() {
-  const { state } = useLocation()
-  const { file, vehicleType, symptoms } = state || {}
-  const { user } = useAuth()
-  const { addToHistory } = useApp()
-  const navigate = useNavigate()
+export default function Analysis({ navigate }) {
+  const { consumeCredit, addToHistory, lastCapture, isPremium, credits } = useApp()
+  const [description, setDescription] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (!file) {
-      navigate('/capture')
+  async function runDiagnosis() {
+    setError('')
+
+    if (!isPremium && credits <= 0) {
+      navigate(SCREENS.PAYWALL)
       return
     }
 
-    const runDiagnosis = async () => {
-      try {
-        const result = await diagnoseImage({ file, vehicleType, symptoms, user })
-        addToHistory(result)
-        navigate('/result', { state: { diagnosis: result } })
-      } catch (e) {
-        setError(e.message)
-      }
+    const consumed = consumeCredit()
+    if (!consumed) {
+      navigate(SCREENS.PAYWALL)
+      return
     }
 
-    const timer = setTimeout(runDiagnosis, 2000)
-    return () => clearTimeout(timer)
-  }, [file, vehicleType, symptoms, user])
+    setLoading(true)
+    try {
+      const result = await diagnoseVehicle({
+        type: lastCapture?.type || 'text',
+        payload: lastCapture?.payload || null,
+        description
+      })
+      const saved = addToHistory(result)
+      await saveDiagnosis(saved)
+      navigate(SCREENS.RESULT)
+    } catch (e) {
+      setError(e?.message || 'Analyse impossible')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div className="screen" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '100vh' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🔍</div>
-        <h2 style={{ marginBottom: '8px' }}>Analyse en cours...</h2>
-        <p style={{ color: 'var(--text-muted)' }}>L'IA examine votre image</p>
-        <LoadingSpinner message="" />
+    <main className="screen">
+      <div className="card">
+        <h2>Analyse du véhicule</h2>
+        <p style={{ marginBottom: 12 }}>
+          Décris les symptômes: bruit, voyant, odeur, perte de puissance, démarrage, fumée, etc.
+        </p>
+        <textarea
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          placeholder="Ex: voyant moteur orange, voiture qui tremble au ralenti..."
+        />
+        <ErrorMessage message={error} />
+        <PrimaryButton loading={loading} onClick={runDiagnosis}>Lancer le diagnostic</PrimaryButton>
       </div>
-      {error && <ErrorMessage message={error} />}
-    </div>
+    </main>
   )
 }
