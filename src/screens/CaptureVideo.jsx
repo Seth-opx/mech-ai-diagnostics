@@ -1,13 +1,23 @@
-import { Header } from '../components/Header'
+import { useApp } from '../context/AppContext.jsx'
+import { SCREENS } from '../utils/constants.js'
 
-export default function CaptureVideo() {
+export default function CaptureVideo({ navigate }) {
+  const { setLastCapture } = useApp()
+
+  function mockVideo() {
+    setLastCapture({ type: 'video', payload: 'video-demo' })
+    navigate(SCREENS.ANALYSIS)
+  }
+
   return (
-    <div className="screen">
-      <Header title="🎥 Capture vidéo" />
-      <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
-        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎥</div>
-        <p style={{ color: 'var(--text-muted)' }}>Fonctionnalité à venir</p>
+    <main className="screen">
+      <div className="card">
+        <h2>Capture vidéo</h2>
+        <p style={{ marginBottom: 16 }}>
+          La capture vidéo native dépend de l'intégration Android. Pour cette version debug, un mode démo est activé.
+        </p>
+        <button className="btn-primary" onClick={mockVideo}>Utiliser une vidéo démo</button>
       </div>
-    </div>
+    </main>
   )
 }
