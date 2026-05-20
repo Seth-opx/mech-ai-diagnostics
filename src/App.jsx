@@ -7,7 +7,6 @@ import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import { AppProvider } from './context/AppContext.jsx'
 import { SCREENS } from './utils/constants.js'
 
-import Splash from './screens/Splash.jsx'
 import Login from './screens/Login.jsx'
 import Dashboard from './screens/Dashboard.jsx'
 import CapturePhoto from './screens/CapturePhoto.jsx'
@@ -22,17 +21,20 @@ import Paywall from './screens/Paywall.jsx'
 import Debug from './screens/Debug.jsx'
 
 function Router() {
-  const { user, loading } = useAuth()
-  const [screen, setScreen] = useState(SCREENS.SPLASH)
+  const { user, loading, mockMode } = useAuth()
+  const [screen, setScreen] = useState(SCREENS.DASHBOARD)
 
   const navigate = useCallback(next => {
     setScreen(next)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    try {
+      window.scrollTo(0, 0)
+    } catch {
+      // Certains WebView Android anciens n'aiment pas scrollTo avec options.
+    }
   }, [])
 
   const ScreenComponent = useMemo(() => {
     const map = {
-      [SCREENS.SPLASH]: Splash,
       [SCREENS.LOGIN]: Login,
       [SCREENS.DASHBOARD]: Dashboard,
       [SCREENS.CAPTURE_PHOTO]: CapturePhoto,
@@ -51,18 +53,24 @@ function Router() {
 
   if (loading) {
     return (
-      <div className="center-screen">
-        <LoadingSpinner label="Préparation de l'application..." />
+      <div className="app">
+        <div className="center-screen">
+          <LoadingSpinner label="Préparation de l'application..." />
+        </div>
       </div>
     )
   }
 
-  const authRequired = screen !== SCREENS.LOGIN && screen !== SCREENS.SPLASH
-  if (!user && authRequired) {
-    return <Login navigate={navigate} />
+  if (!user && screen !== SCREENS.LOGIN) {
+    return (
+      <div className="app">
+        <Header title="Méco-IA" showCredits={false} />
+        <Login navigate={navigate} />
+      </div>
+    )
   }
 
-  const showShell = screen !== SCREENS.SPLASH && screen !== SCREENS.LOGIN
+  const showShell = screen !== SCREENS.LOGIN
 
   return (
     <div className="app">
@@ -73,6 +81,18 @@ function Router() {
           showCredits={screen !== SCREENS.PAYWALL}
         />
       )}
+
+      {mockMode && showShell && (
+        <div style={{
+          maxWidth: 520,
+          width: '100%',
+          margin: '0 auto',
+          padding: '0 20px 8px'
+        }}>
+          <div className="disclaimer">Mode démo actif: l'application s'affiche même sans clés Firebase.</div>
+        </div>
+      )}
+
       <ScreenComponent navigate={navigate} currentScreen={screen} />
       {showShell && <BottomNav current={screen} navigate={navigate} />}
     </div>
