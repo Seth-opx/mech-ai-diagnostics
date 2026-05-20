@@ -13,6 +13,7 @@ import Chat from './screens/Chat'
 import Garages from './screens/Garages'
 import Profile from './screens/Profile'
 import Paywall from './screens/Paywall'
+import Debug from './screens/Debug'
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/garages" element={<Garages />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/paywall" element={<Paywall />} />
+          <Route path="/debug" element={<Debug />} />
         </Routes>
       </AppProvider>
     </AuthProvider>
