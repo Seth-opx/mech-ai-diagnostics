@@ -1,74 +1,107 @@
-import React, { useState, useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
-  Cpu, Zap, Gauge, Shield, Battery, Camera, Mic, Video,
-  History, MapPin, User, FileText, ChevronRight, X,
-  Activity, Settings, AlertTriangle, CheckCircle, Wrench,
-  Save, Share2, Download, Car, RefreshCw, WrenchIcon,
-  MapPinned, MessageSquare, Star, Crown, Radio, Volume2
+  Menu, Cpu, Zap, Shield, History, MapPin, User, Database, Terminal,
+  AlertTriangle, Settings2, ChevronRight, X, Gauge, Power,
+  BatteryCharging, Camera, RefreshCw, Search, Wifi, Video, Mic,
+  Crown, Sparkles, Wrench, FileText, CheckCircle2, Activity
 } from 'lucide-react'
 
-const INITIAL_FORM = {
-  brand: '', model: '', year: '', mileage: '', engine: '',
-  fuel: '', transmission: '', issueType: 'Voyant moteur',
-  warningLight: 'Non', noise: 'Non', smell: 'Non', smoke: 'Non',
-  powerLoss: 'Non', hardStart: 'Non', braking: 'Non', steering: 'Non',
-  temp: 'Normal', battery: 'OK', since: '', severity: 'Moyenne', description: ''
+const initialForm = {
+  brand: '',
+  model: '',
+  year: '',
+  mileage: '',
+  engine: '',
+  issueType: 'Voyant moteur',
+  warningLight: 'Oui',
+  noise: 'Non',
+  smell: 'Non',
+  powerLoss: 'Non',
+  since: '',
+  severity: 'Moyenne',
+  description: ''
 }
 
-function buildMockDiag(f) {
-  const crit = f.severity === 'Critique' || f.powerLoss === 'Oui' || f.braking === 'Oui'
-  const engine = f.issueType?.toLowerCase().includes('moteur') || f.warningLight === 'Clignotant'
-  const urg = crit ? 'Élevée' : engine ? 'Modérée' : 'Faible'
-  const score = crit ? 38 : engine ? 67 : 82
+const tabs = [
+  { id: 'dashboard', label: 'Accueil', icon: Gauge },
+  { id: 'diagnostic', label: 'Diagnostic', icon: Cpu },
+  { id: 'history', label: 'Historique', icon: History },
+  { id: 'garage', label: 'Garages', icon: MapPin },
+  { id: 'profile', label: 'Profil', icon: User }
+]
+
+function buildMockDiagnostic(form) {
+  const desc = `${form.issueType} ${form.description}`.toLowerCase()
+  const hasCritical =
+    form.severity === 'Critique' ||
+    form.powerLoss === 'Oui' ||
+    desc.includes('fumée') ||
+    desc.includes('clignote') ||
+    desc.includes('frein')
+
+  const hasEngine =
+    desc.includes('moteur') ||
+    desc.includes('tremble') ||
+    desc.includes('ralenti') ||
+    form.issueType === 'Voyant moteur'
+
+  const urgency = hasCritical ? 'Élevée' : hasEngine ? 'Modérée' : 'Faible'
+
   return {
-    id: Date.now(), vehicle: `${f.brand || 'Véhicule'} ${f.model || ''}`.trim() || 'Véhicule inconnu',
-    title: crit ? 'Anomalie critique détectée' : engine ? 'Anomalie moteur probable' : 'Contrôle recommandé',
-    urgency: urg, score, canDrive: crit ? 'Non recommandé' : engine ? 'Trajet court uniquement' : 'Oui, prudence',
-    cost: crit ? '180–850 €' : engine ? '80–320 €' : '40–160 €', time: crit ? '2–5 jours' : engine ? '1–3 jours' : '几个小时',
-    causes: engine ? [
-      { label: 'Capteur oxygène / débitmètre', pct: 36 },
-      { label: 'Bougies, bobines ou injection', pct: 29 },
-      { label: 'Prise d\'air / faisceau électrique', pct: 18 },
-    ] : [
-      { label: 'Entretien en retard', pct: 34 },
-      { label: 'Capteur secondaire', pct: 25 },
-      { label: 'Usure pièce périphérique', pct: 19 },
+    id: Date.now(),
+    vehicle: `${form.brand || 'Véhicule'} ${form.model || ''}`.trim(),
+    title: hasEngine ? 'Anomalie moteur détectée' : 'Contrôle mécanique recommandé',
+    urgency,
+    score: hasCritical ? 38 : hasEngine ? 67 : 82,
+    cost: hasCritical ? '180 € à 850 €' : hasEngine ? '80 € à 320 €' : '40 € à 160 €',
+    canDrive: hasCritical ? 'Non recommandé' : hasEngine ? 'Oui, trajet court uniquement' : 'Oui, avec prudence',
+    summary:
+      hasCritical
+        ? "Les symptômes indiquent un risque mécanique sérieux. Évite de rouler et fais contrôler le véhicule rapidement."
+        : hasEngine
+          ? "Les informations indiquent une anomalie moteur probable. Un scan OBD-II et un contrôle capteur sont recommandés."
+          : "Les symptômes semblent modérés. Un contrôle d'entretien ciblé est recommandé pour éviter l'aggravation.",
+    causes: hasEngine
+      ? [
+          { label: "Capteur oxygène ou débitmètre", percent: 36 },
+          { label: "Bougies, bobines ou injection", percent: 29 },
+          { label: "Prise d'air ou faisceau électrique", percent: 18 }
+        ]
+      : [
+          { label: "Entretien en retard", percent: 34 },
+          { label: "Capteur secondaire", percent: 25 },
+          { label: "Usure normale d'une pièce périphérique", percent: 19 }
+        ],
+    selfChecks: [
+      "Vérifier les niveaux d'huile et de liquide de refroidissement",
+      "Observer si le voyant moteur clignote ou reste fixe",
+      "Noter les bruits, odeurs et moments d'apparition"
     ],
-    risks: crit ? 'Risque de panne immobilisante.' : 'Le problème peut s\'aggraver.',
-    garageChecks: ['Lecture codes OBD-II', 'Contrôle capteurs', 'Essai routier'],
-    selfChecks: ['Vérifier niveaux huile et liquide refroidissement', 'Observer voyant clignotant ou fixe'],
+    garageChecks: [
+      "Lecture des codes défaut OBD-II",
+      "Contrôle faisceau/capteurs",
+      "Essai routier et mesure des paramètres moteur"
+    ],
+    risks: hasCritical
+      ? "Risque de panne immobilisante ou d'endommagement moteur si le véhicule continue à rouler."
+      : "Le problème peut s'aggraver et augmenter le coût de réparation s'il est ignoré.",
     createdAt: new Date().toISOString()
   }
 }
 
-const NAV_ITEMS = [
-  { id: 'home', label: 'Accueil', icon: Gauge },
-  { id: 'diagnostic', label: 'Diagnostic', icon: Cpu },
-  { id: 'history', label: 'Historique', icon: History },
-  { id: 'garage', label: 'Garages', icon: MapPin },
-  { id: 'profile', label: 'Profil', icon: User },
-]
-
-const MODULES = [
-  { id: 'diagnostic', label: 'Diagnostic IA', desc: 'Analyse guidée', icon: Cpu, badge: null, accent: false },
-  { id: 'photo', label: 'Photo', desc: 'Analyse visuelle', icon: Camera, badge: null, accent: false },
-  { id: 'audio', label: 'Audio moteur', desc: 'Bruit diagnostic', icon: Mic, badge: 'Bêta', accent: false },
-  { id: 'video', label: 'Vidéo', desc: 'Analyse vidéo', icon: Video, badge: 'Bêta', accent: false },
-]
-
-function Header({ onMenu }) {
+function AppHeader({ onMenu }) {
   return (
     <header className="app-header">
       <div className="brand-block">
-        <div className="brand-icon"><Cpu size={22} /></div>
-        <div className="brand-titles">
+        <div className="brand-icon"><Cpu size={25} /></div>
+        <div>
           <h1>MÉCO-IA</h1>
-          <p>Diagnostic automobile IA</p>
+          <p>Diagnostic automobile IA premium</p>
         </div>
       </div>
-      <div className="header-right">
-        <div className="status-pill"><Activity size={10} />ONLINE</div>
-        <button className="icon-btn" onClick={onMenu} aria-label="Menu"><Settings size={20} /></button>
+      <div className="header-actions">
+        <div className="status-pill"><Wifi size={13} /><span>ONLINE</span></div>
+        <button className="icon-button" onClick={onMenu} aria-label="Ouvrir le menu"><Menu size={26} /></button>
       </div>
     </header>
   )
@@ -77,157 +110,138 @@ function Header({ onMenu }) {
 function BottomNav({ view, setView }) {
   return (
     <nav className="bottom-nav">
-      {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
-        <button key={id} className={`nav-item ${view === id ? 'active' : ''}`} onClick={() => setView(id)}>
-          <Icon size={18} /><span>{label}</span>
-        </button>
-      ))}
+      {tabs.map(item => {
+        const Icon = item.icon
+        return (
+          <button key={item.id} className={view === item.id ? 'nav-item active' : 'nav-item'} onClick={() => setView(item.id)}>
+            <Icon size={19} /><span>{item.label}</span>
+          </button>
+        )
+      })}
     </nav>
   )
 }
 
-function Home({ setView, history }) {
-  const last = history[0]
+function MetricCard({ label, value, icon: Icon, tone = 'blue' }) {
+  return (
+    <div className={`metric-card ${tone}`}>
+      <div className="metric-icon"><Icon size={22} /></div>
+      <div><strong>{value}</strong><span>{label}</span></div>
+    </div>
+  )
+}
+
+function OptionCard({ title, icon: Icon, desc, onClick, badge }) {
+  return (
+    <button onClick={onClick} className="option-card">
+      <div className="option-card-top">
+        <div className="option-icon"><Icon size={22} /></div>
+        {badge && <span className="mini-badge">{badge}</span>}
+      </div>
+      <h3>{title}</h3>
+      <p>{desc}</p>
+      <ChevronRight className="option-arrow" size={18} />
+    </button>
+  )
+}
+
+function Dashboard({ setView, latestDiagnostic }) {
   return (
     <main className="screen">
-      <section className="hero-card glass">
-        <div className="hero-glow-bg" />
-        <div className="scanner-wrap">
-          <div className="scanner-ring">
-            <div className="scan-arc" />
-            <div className="scanner-inner">
-              <Radio size={36} />
-            </div>
-          </div>
+      <section className="hero-card">
+        <div className="hero-glow" />
+        <div className="hero-content">
+          <div className="eyebrow"><Sparkles size={14} />Scanner IA multimodal</div>
+          <h2>Analyse ton véhicule comme dans un garage high-tech.</h2>
+          <p>Renseigne les symptômes, ajoute une photo si besoin, puis génère un rapport clair avec urgence, causes probables et actions recommandées.</p>
+          <button className="primary-button" onClick={() => setView('diagnostic')}><Zap size={20} />Lancer un diagnostic</button>
         </div>
-        <div className="eyebrow"><Sparkles size={12} />Scanner IA multimodal</div>
-        <h2 className="hero-title">Analyse ton véhicule comme un expert.</h2>
-        <p className="hero-sub">Renseigne les symptômes, lance le diagnostic et obtiens un rapport professionnel en secondes.</p>
-        <button className="btn-primary" onClick={() => setView('diagnostic')}>
-          <Zap size={18} />Scanner mon véhicule
-        </button>
       </section>
 
-      {last && (
-        <section className="vehicle-card glass">
-          <div className="vehicle-icon"><Car size={26} /></div>
-          <div className="vehicle-info">
-            <h3>{last.vehicle}</h3>
-            <p>{last.title}</p>
-          </div>
-          <div className="score-badge">
-            <strong>{last.score}%</strong>
-            <span>Score</span>
-          </div>
+      <section className="metrics-grid">
+        <MetricCard label="Crédits restants" value="2/2" icon={BatteryCharging} tone="green" />
+        <MetricCard label="Mode actuel" value="Free" icon={Crown} tone="purple" />
+        <MetricCard label="État système" value="Stable" icon={Shield} tone="blue" />
+      </section>
+
+      {latestDiagnostic && (
+        <section className="panel">
+          <div className="section-title"><Activity size={18} /><span>Dernier diagnostic</span></div>
+          <h3>{latestDiagnostic.title}</h3>
+          <p>{latestDiagnostic.summary}</p>
+          <div className="result-row"><span>Urgence</span><strong>{latestDiagnostic.urgency}</strong></div>
         </section>
       )}
 
-      <div className="metrics-row">
-        <div className="metric-chip green">
-          <div className="m-chip-icon"><Battery size={18} /></div>
-          <strong>2/2</strong>
-          <span>Crédits</span>
-        </div>
-        <div className="metric-chip">
-          <div className="m-chip-icon"><Shield size={18} /></div>
-          <strong>Free</strong>
-          <span>Mode</span>
-        </div>
-        <div className="metric-chip violet">
-          <div className="m-chip-icon"><Gauge size={18} /></div>
-          <strong>OK</strong>
-          <span>Système</span>
-        </div>
-      </div>
+      <section className="quick-grid">
+        <OptionCard title="Texte guidé" icon={FileText} desc="Questionnaire intelligent basé sur les symptômes." onClick={() => setView('diagnostic')} />
+        <OptionCard title="Photo" icon={Camera} desc="Analyse visuelle préparée pour l'IA multimodale." onClick={() => setView('photo')} />
+        <OptionCard title="Audio moteur" icon={Mic} desc="Bêta : bruit moteur, claquement, sifflement." onClick={() => setView('media')} badge="Bêta" />
+        <OptionCard title="Vidéo" icon={Video} desc="Bêta : import vidéo et analyse future." onClick={() => setView('media')} badge="Bêta" />
+      </section>
 
-      <div className="section-label"><Activity size={14} />Modules disponibles</div>
-      <div className="modules-grid">
-        {MODULES.map(({ id, label, desc, icon: Icon, badge }) => (
-          <button key={id} className={`module-card`} onClick={() => setView(id)}>
-            {badge && <span className="mod-badge">{badge}</span>}
-            <div className="mod-icon"><Icon size={20} /></div>
-            <div className="mod-card-title">{label}</div>
-            <div className="mod-card-desc">{desc}</div>
-          </button>
-        ))}
-      </div>
-
-      <div className="legal-box">
-        Méco-IA est un outil d'aide au diagnostic. Toujours faire confirmer par un professionnel.
-      </div>
+      <div className="legal-box">Méco-IA fournit une aide au diagnostic, pas un avis mécanique certifié. En cas de doute, consulte un professionnel.</div>
     </main>
   )
 }
 
 function DiagnosticForm({ form, setForm, onAnalyze }) {
-  const update = e => {
-    const v = e.target.value, n = e.target.name
-    setForm(p => ({ ...p, [n]: v }))
+  const update = event => {
+    const { name, value } = event.target
+    setForm(prev => ({ ...prev, [name]: value }))
   }
-  const row = fields => (
-    <div className="form-grid">
-      {fields.map(({ name, placeholder, type }) => (
-        <input key={name} name={name} value={form[name]} onChange={update} placeholder={placeholder} type={type || 'text'} inputMode={type === 'number' ? 'numeric' : undefined} />
-      ))}
-    </div>
-  )
 
   return (
     <main className="screen">
-      <section className="diag-form glass">
-        <div className="diag-title"><Cpu size={16} />Diagnostic guidé</div>
-        {row([{ name: 'brand', placeholder: 'Marque (ex: Renault)' }, { name: 'model', placeholder: 'Modèle (ex: Clio)' }])}
-        {row([{ name: 'year', placeholder: 'Année', type: 'number' }, { name: 'mileage', placeholder: 'Kilométrage', type: 'number' }])}
-        {row([{ name: 'engine', placeholder: 'Motorisation (ex: 1.5 dCi)' }, { name: 'fuel', placeholder: 'Carburant' }])}
-        {row([{ name: 'transmission', placeholder: 'Boîte (Auto/Manuelle)' }, { name: 'issueType', placeholder: 'Type de problème' }])}
+      <section className="panel">
+        <div className="section-title"><Cpu size={18} /><span>Diagnostic guidé</span></div>
+        <p className="muted">Plus les informations sont précises, plus le rapport sera utile. Les données ci-dessous alimentent le diagnostic mock.</p>
 
-        <div className="form-grid" style={{ marginTop: 10 }}>
+        <div className="form-grid">
+          <input name="brand" value={form.brand} onChange={update} placeholder="Marque ex: Renault" />
+          <input name="model" value={form.model} onChange={update} placeholder="Modèle ex: Clio" />
+          <input name="year" value={form.year} onChange={update} placeholder="Année ex: 2018" inputMode="numeric" />
+          <input name="mileage" value={form.mileage} onChange={update} placeholder="Kilométrage ex: 125000" inputMode="numeric" />
+          <input name="engine" value={form.engine} onChange={update} placeholder="Motorisation ex: 1.5 dCi" />
+          <select name="issueType" value={form.issueType} onChange={update}>
+            <option>Voyant moteur</option><option>Bruit suspect</option><option>Démarrage difficile</option><option>Perte de puissance</option><option>Fumée</option><option>Freinage</option><option>Batterie</option>
+          </select>
           <select name="warningLight" value={form.warningLight} onChange={update}>
-            <option>Non</option><option>Oui</option><option>Clignotant</option>
+            <option>Oui</option><option>Non</option><option>Clignotant</option>
           </select>
           <select name="noise" value={form.noise} onChange={update}>
             <option>Non</option><option>Oui</option>
           </select>
-          <select name="smoke" value={form.smoke} onChange={update}>
-            <option>Non</option><option>Blanc</option><option>Noir</option><option>Bleu</option>
+          <select name="smell" value={form.smell} onChange={update}>
+            <option>Non</option><option>Essence</option><option>Brûlé</option><option>Échappement</option>
           </select>
           <select name="powerLoss" value={form.powerLoss} onChange={update}>
             <option>Non</option><option>Oui</option>
           </select>
-          <select name="hardStart" value={form.hardStart} onChange={update}>
-            <option>Non</option><option>Oui</option>
-          </select>
-          <select name="braking" value={form.braking} onChange={update}>
-            <option>Non</option><option>Oui</option>
-          </select>
-          <select name="steering" value={form.steering} onChange={update}>
-            <option>Normal</option><option>Dur</option><option> Vibrant</option>
-          </select>
-          <select name="temp" value={form.temp} onChange={update}>
-            <option>Normal</option><option>Chaud</option><option>Très chaud</option>
+          <input name="since" value={form.since} onChange={update} placeholder="Depuis quand ?" />
+          <select name="severity" value={form.severity} onChange={update}>
+            <option>Faible</option><option>Moyenne</option><option>Élevée</option><option>Critique</option>
           </select>
         </div>
-        {row([{ name: 'since', placeholder: 'Depuis quand ?' }, { name: 'severity', placeholder: 'Gravité' }])}
-        <textarea name="description" value={form.description} onChange={update} placeholder="Décris le problème en détail..." style={{ gridColumn: 'span 2', minHeight: 110, resize: 'vertical', width: '100%', border: '1px solid rgba(0,212,255,0.18)', borderRadius: 14, background: 'rgba(3,10,22,0.85)', color: '#f0f9ff', padding: 13, fontSize: '0.86rem', fontFamily: 'inherit', outline: 'none', marginBottom: 14, boxSizing: 'border-box' }} />
-        <button className="btn-primary" onClick={onAnalyze}><Zap size={18} />Générer le rapport IA</button>
+
+        <textarea name="description" value={form.description} onChange={update} placeholder="Décris le problème : bruit, vibration, fumée, voyant, situation d'apparition..." />
+        <button className="primary-button" onClick={onAnalyze}><Zap size={20} />Générer le rapport IA</button>
       </section>
     </main>
   )
 }
 
 function AnalysisScreen() {
-  const steps = ['Collecte des symptômes', 'Croisement causes probables', 'Évaluation urgence', 'Estimation coût', 'Génération rapport']
+  const steps = ['Collecte des symptômes', 'Croisement avec causes probables', "Évaluation du niveau d'urgence", 'Estimation du coût', 'Génération du rapport']
   return (
     <main className="screen">
-      <section className="analysis-card glass">
-        <div className="analysis-ring"><RefreshCw size={36} /></div>
-        <h2 className="analysis-title">Analyse IA en cours</h2>
-        <p className="analysis-sub">Raisonnement en cours à partir des données fournies</p>
+      <section className="analysis-panel">
+        <div className="scanner-ring"><RefreshCw size={42} /></div>
+        <h2>Analyse IA en cours</h2>
+        <p>Le système simule un raisonnement diagnostic à partir des réponses fournies.</p>
         <div className="analysis-steps">
-          {steps.map((s, i) => (
-            <div key={s} className="step-item">
-              <CheckCircle size={16} /><span>{s}</span><em>0{i + 1}</em>
-            </div>
+          {steps.map((step, index) => (
+            <div className="analysis-step" key={step}><CheckCircle2 size={18} /><span>{step}</span><em>0{index + 1}</em></div>
           ))}
         </div>
       </section>
@@ -235,327 +249,150 @@ function AnalysisScreen() {
   )
 }
 
-function ResultScreen({ diag, setView, onSave }) {
-  if (!diag) return (
-    <main className="screen">
-      <div className="empty-state glass">
-        <AlertTriangle size={42} />
-        <h3>Aucun rapport</h3>
-        <p>Lance un diagnostic pour générer un rapport.</p>
-        <button className="btn-primary" style={{ marginTop: 16 }} onClick={() => setView('diagnostic')}>
-          <Zap size={16} />Lancer un diagnostic
-        </button>
-      </div>
-    </main>
-  )
-  const urgClass = diag.urgency === 'Élevée' ? 'high' : diag.urgency === 'Modérée' ? 'med' : 'low'
+function ResultScreen({ diagnostic, setView }) {
+  if (!diagnostic) {
+    return <main className="screen"><section className="panel empty-state"><AlertTriangle size={38} /><h2>Aucun rapport</h2><p>Lance un diagnostic pour générer un rapport.</p><button className="primary-button" onClick={() => setView('diagnostic')}>Lancer un diagnostic</button></section></main>
+  }
+
   return (
     <main className="screen">
-      <section className="result-hero glass">
-        <div className="result-score">
-          <strong>{diag.score}%</strong>
-          <span>Santé</span>
-        </div>
-        <div className="result-info">
-          <h2>{diag.title}</h2>
-          <p>{diag.vehicle}</p>
-          <div className={`urgency-tag ${urgClass}`}>
-            <AlertTriangle size={12} />Urgence {diag.urgency}
-          </div>
-        </div>
+      <section className="result-hero">
+        <div><div className="eyebrow"><Wrench size={14} />Rapport IA</div><h2>{diagnostic.title}</h2><p>{diagnostic.summary}</p></div>
+        <div className="score-orb"><strong>{diagnostic.score}%</strong><span>Score</span></div>
       </section>
 
-      <div className="metrics-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-        <div className="metric-chip">
-          <div className="m-chip-icon"><WrenchIcon size={16} /></div>
-          <strong style={{ fontSize: '0.82rem' }}>{diag.cost}</strong>
-          <span>Coût est.</span>
-        </div>
-        <div className="metric-chip">
-          <div className="m-chip-icon"><Gauge size={16} /></div>
-          <strong style={{ fontSize: '0.82rem' }}>{diag.time}</strong>
-          <span>Durée répa.</span>
-        </div>
-        <div className="metric-chip green">
-          <div className="m-chip-icon"><Car size={16} /></div>
-          <strong style={{ fontSize: '0.82rem' }}>{diag.canDrive.split(',')[0]}</strong>
-          <span>Conduite</span>
-        </div>
-      </div>
+      <section className="panel">
+        <div className="result-row"><span>Véhicule</span><strong>{diagnostic.vehicle}</strong></div>
+        <div className="result-row"><span>Urgence</span><strong className={`urgency ${diagnostic.urgency.toLowerCase()}`}>{diagnostic.urgency}</strong></div>
+        <div className="result-row"><span>Peut-on rouler ?</span><strong>{diagnostic.canDrive}</strong></div>
+        <div className="result-row"><span>Coût estimé</span><strong>{diagnostic.cost}</strong></div>
+      </section>
 
-      <div className="section-label" style={{ marginTop: 14 }}><WrenchIcon size={14} />Causes probables</div>
-      {diag.causes.map(c => (
-        <div key={c.label} className="cause-bar glass" style={{ padding: '14px 16px', marginBottom: 8 }}>
-          <div className="cause-row">
-            <span style={{ fontSize: '0.84rem' }}>{c.label}</span>
-            <strong style={{ color: 'var(--green)' }}>{c.pct}%</strong>
+      <section className="panel">
+        <div className="section-title"><Search size={18} /><span>Causes probables</span></div>
+        {diagnostic.causes.map(cause => (
+          <div className="cause-row" key={cause.label}>
+            <div><strong>{cause.label}</strong><div className="bar"><span style={{ width: `${cause.percent}%` }} /></div></div>
+            <em>{cause.percent}%</em>
           </div>
-          <div className="cause-bar-visual"><span style={{ width: `${c.pct}%` }} /></div>
-        </div>
-      ))}
+        ))}
+      </section>
 
-      <div className="section-label" style={{ marginTop: 10 }}><CheckCircle size={14} />Vérifications</div>
-      {diag.selfChecks.map(s => (
-        <div key={s} style={{ padding: '12px 14px', borderRadius: 12, background: 'rgba(0,212,255,0.04)', border: '1px solid rgba(0,212,255,0.1)', marginBottom: 8, fontSize: '0.82rem', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          <CheckCircle size={14} style={{ color: 'var(--cyan)', flexShrink: 0, marginTop: 2 }} />
-          <span>{s}</span>
-        </div>
-      ))}
-
-      <div className="disclaimer-box">
-        ⚠️ Ce diagnostic est une aide, pas un avis mécanique certifié. Confirmez toujours avec un professionnel.
-      </div>
-
-      <div className="action-btns">
-        <button className="btn-green"><Save size={16} />Sauvegarder</button>
-        <button className="btn-secondary"><MapPinned size={16} />Garage</button>
-        <button className="btn-violet"><Download size={16} />Rapport</button>
-      </div>
+      <section className="panel"><div className="section-title"><Shield size={18} /><span>À vérifier soi-même</span></div><ul className="clean-list">{diagnostic.selfChecks.map(item => <li key={item}>{item}</li>)}</ul></section>
+      <section className="panel"><div className="section-title"><Terminal size={18} /><span>Contrôle garage</span></div><ul className="clean-list">{diagnostic.garageChecks.map(item => <li key={item}>{item}</li>)}</ul></section>
+      <section className="warning-panel"><AlertTriangle size={20} /><p>{diagnostic.risks}</p></section>
+      <div className="action-row"><button className="secondary-button" onClick={() => setView('garage')}>Trouver un garage</button><button className="primary-button" onClick={() => setView('history')}>Voir historique</button></div>
     </main>
   )
 }
 
 function PhotoScreen({ setView }) {
+  const [photoLabel, setPhotoLabel] = useState('')
   return (
     <main className="screen">
-      <section className="photo-card glass">
-        <h2>📷 Diagnostic photo</h2>
-        <p>Envoie une photo de la pièce ou du zone suspecte pour analyse visuelle par l'IA.</p>
-        <div className="upload-zone">
-          <Camera size={36} />
-          <p>Tap pour sélectionner une image</p>
-          <span>JPG, PNG, WEBP — Max 20 Mo</span>
-        </div>
-        <button className="btn-secondary" style={{ marginTop: 14 }} onClick={() => setView('home')}>
-          <ChevronRight size={16} />Retour
-        </button>
+      <section className="panel">
+        <div className="section-title"><Camera size={18} /><span>Analyse photo</span></div>
+        <div className="upload-zone"><Camera size={44} /><h3>Ajouter une photo</h3><p>Voyant, tableau de bord, pneu, fuite, moteur ou pièce visible.</p><button className="secondary-button">Importer / prendre une photo</button></div>
+        <textarea value={photoLabel} onChange={e => setPhotoLabel(e.target.value)} placeholder="Que montre la photo ? Ex: voyant moteur orange, fuite sous moteur..." />
+        <button className="primary-button" onClick={() => setView('diagnostic')}>Continuer vers diagnostic</button>
       </section>
     </main>
   )
 }
 
-function AudioScreen({ setView }) {
-  return (
-    <main className="screen">
-      <section className="media-card glass">
-        <h2>🎙 Audio moteur</h2>
-        <p>Enregistre le bruit de ton moteur pour analyse acoustique par l'IA.</p>
-        <div className="media-placeholder">
-          <Volume2 size={36} />
-          <p>Appuie pour enregistrer</p>
-          <span className="badge-beta">BÊTA</span>
-        </div>
-        <button className="btn-secondary" style={{ marginTop: 14 }} onClick={() => setView('home')}>
-          <ChevronRight size={16} />Retour
-        </button>
-      </section>
-    </main>
-  )
+function MediaScreen() {
+  return <main className="screen"><section className="panel"><div className="section-title"><Mic size={18} /><span>Audio / Vidéo bêta</span></div><div className="beta-card"><Video size={48} /><h2>Module multimodal en préparation</h2><p>L'analyse audio/vidéo moteur sera connectée à l'IA plus tard. Pour l'instant, utilise le diagnostic guidé et la photo.</p></div></section></main>
 }
 
-function VideoScreen({ setView }) {
+function HistoryScreen({ history, setView, setDiagnostic }) {
   return (
     <main className="screen">
-      <section className="media-card glass">
-        <h2>🎥 Vidéo</h2>
-        <p>Envoie une vidéo courte (30s max) pour analyse multimodale.</p>
-        <div className="media-placeholder">
-          <Video size={36} />
-          <p>Sélectionne une vidéo</p>
-          <span className="badge-beta">BÊTA</span>
-        </div>
-        <button className="btn-secondary" style={{ marginTop: 14 }} onClick={() => setView('home')}>
-          <ChevronRight size={16} />Retour
-        </button>
+      <section className="panel">
+        <div className="section-title"><History size={18} /><span>Historique</span></div>
+        {history.length === 0 ? <div className="empty-state"><History size={38} /><p>Aucun diagnostic enregistré.</p></div> : history.map(item => (
+          <button className="history-card" key={item.id} onClick={() => { setDiagnostic(item); setView('result') }}>
+            <div><strong>{item.vehicle}</strong><span>{new Date(item.createdAt).toLocaleString('fr-FR')}</span><p>{item.summary}</p></div><em>{item.urgency}</em>
+          </button>
+        ))}
       </section>
-    </main>
-  )
-}
-
-function HistoryScreen({ history, setView, setDiag }) {
-  if (!history.length) return (
-    <main className="screen">
-      <div className="empty-state glass">
-        <History size={42} />
-        <h3>Aucun historique</h3>
-        <p>Lance un diagnostic pour commencer.</p>
-      </div>
-    </main>
-  )
-  return (
-    <main className="screen">
-      <div className="section-label" style={{ marginBottom: 14 }}><History size={14} />Historique</div>
-      {history.map((h, i) => (
-        <div key={h.id || i} className="history-card" onClick={() => { setDiag(h); setView('result') }}>
-          <h4>{h.vehicle}</h4>
-          <p>{h.title}</p>
-          <div className="history-meta">
-            <span style={{ display: 'flex', alignItems: 'center' }}>
-              <span className={`urgency-dot ${h.urgency === 'Élevée' ? 'high' : h.urgency === 'Modérée' ? 'med' : 'low'}`} />
-              {h.urgency}
-            </span>
-            <strong style={{ color: 'var(--green)' }}>{h.score}%</strong>
-          </div>
-        </div>
-      ))}
     </main>
   )
 }
 
 function GarageScreen() {
   const garages = [
-    { name: 'Garage Dufrenne', dist: '1.2 km', spec: 'Multimarque', rating: 4.8 },
-    { name: 'Speedy Bordeaux', dist: '2.8 km', spec: 'Freinage, Vidange', rating: 4.5 },
-    { name: 'Midas', dist: '3.1 km', spec: 'Échappement, Suspension', rating: 4.3 },
+    { name: 'Atelier LED Auto', distance: '1,2 km', note: '4.8', specialty: 'Diagnostic électronique' },
+    { name: 'Garage Performance IA', distance: '2,6 km', note: '4.6', specialty: 'Moteur / injection' },
+    { name: 'Méca Premium Service', distance: '4,1 km', note: '4.7', specialty: 'Révision complète' }
   ]
-  return (
-    <main className="screen">
-      <div className="section-label" style={{ marginBottom: 14 }}><MapPin size={14} />Garages partenaires</div>
-      {garages.map((g, i) => (
-        <div key={i} className="garage-card glass">
-          <div className="garage-icon"><WrenchIcon size={20} /></div>
-          <div className="garage-info">
-            <h4>{g.name}</h4>
-            <p>{g.spec}</p>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div className="garage-dist">{g.dist}</div>
-            <span style={{ fontSize: '0.7rem', color: 'var(--amber)' }}>★ {g.rating}</span>
-          </div>
-        </div>
-      ))}
-    </main>
-  )
+  return <main className="screen"><section className="panel"><div className="section-title"><MapPin size={18} /><span>Garages recommandés</span></div>{garages.map(garage => <div className="garage-card" key={garage.name}><div><strong>{garage.name}</strong><span>{garage.specialty}</span></div><div className="garage-meta"><em>{garage.distance}</em><b>★ {garage.note}</b></div></div>)}</section></main>
 }
 
 function ProfileScreen({ setView }) {
-  return (
-    <main className="screen">
-      <section className="profile-card glass">
-        <div className="avatar-lg"><User size={36} /></div>
-        <h2>Compte Démo</h2>
-        <p>demo@mecoia.app</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-          <div className="metric-chip">
-            <div className="m-chip-icon"><Cpu size={16} /></div>
-            <strong>2</strong><span>Diagnostics</span>
-          </div>
-          <div className="metric-chip violet">
-            <div className="m-chip-icon"><Crown size={16} /></div>
-            <strong>Free</strong><span>Plan</span>
-          </div>
-        </div>
-        <button className="premium-btn" onClick={() => setView('paywall')}>
-          <Crown size={18} />Passer Premium
-        </button>
-      </section>
-    </main>
-  )
+  return <main className="screen"><section className="profile-card"><div className="avatar"><User size={38} /></div><h2>Compte Démo</h2><p>demo@mecoia.app</p><div className="profile-stats"><MetricCard label="Diagnostics" value="2" icon={Cpu} tone="blue" /><MetricCard label="Plan" value="Free" icon={Crown} tone="purple" /></div><button className="primary-button" onClick={() => setView('paywall')}>Passer Premium</button></section></main>
 }
 
-function PaywallScreen({ setView }) {
-  return (
-    <main className="screen">
-      <section className="paywall-card glass">
-        <Crown size={48} style={{ color: 'var(--violet-2)', marginBottom: 16 }} />
-        <h2>Méco-IA Premium</h2>
-        <p>Débloque les diagnostics illimités et l'analyse photo/audio/vidéo.</p>
-        <div className="plans-grid">
-          <div className="plan-card">
-            <h3>Free</h3>
-            <div className="price">0€ <span>/ mois</span></div>
-            <ul>
-              <li>2 diagnostics / jour</li>
-              <li>Diagnostic texte</li>
-              <li>Historique limité</li>
-            </ul>
-          </div>
-          <div className="plan-card featured">
-            <h3>Premium</h3>
-            <div className="price" style={{ color: 'var(--violet-2)' }}>4,99€ <span>/ mois</span></div>
-            <ul>
-              <li>Diagnostics illimités</li>
-              <li>Photo, Audio, Vidéo</li>
-              <li>Historique complet</li>
-              <li>Rapports PDF</li>
-            </ul>
-          </div>
-        </div>
-        <button className="btn-primary" style={{ background: 'linear-gradient(135deg, var(--violet), #6d28d9)', boxShadow: 'var(--violet-glow)' }} onClick={() => setView('home')}>
-          <Crown size={16} />Activer Premium
-        </button>
-        <button className="btn-secondary" style={{ marginTop: 10 }} onClick={() => setView('home')}>
-          <ChevronRight size={16} />Plus tard
-        </button>
-      </section>
-    </main>
-  )
+function PaywallScreen() {
+  return <main className="screen"><section className="paywall-card"><Crown size={52} /><h2>Méco-IA Premium</h2><p>Débloque les diagnostics illimités et les rapports avancés.</p><div className="plan-grid"><div className="plan-card"><h3>Free</h3><ul><li>2 diagnostics gratuits</li><li>Historique limité</li><li>Publicités récompensées</li></ul></div><div className="plan-card premium"><h3>Premium</h3><ul><li>Diagnostics illimités</li><li>Analyse photo/audio/vidéo</li><li>Rapport détaillé</li><li>Historique complet</li></ul></div></div><button className="primary-button">Activer Premium</button></section></main>
 }
 
-function MenuOverlay({ onClose, setView }) {
-  const items = [
-    ['home', 'Système'], ['diagnostic', 'Diagnostic IA'],
-    ['photo', 'Photo'], ['audio', 'Audio'],
-    ['history', 'Historique'], ['garage', 'Garages'],
-    ['profile', 'Profil'], ['paywall', 'Premium'],
-  ]
+function DebugScreen({ form, diagnostic }) {
+  return <main className="screen"><section className="panel"><div className="section-title"><Database size={18} /><span>Debug</span></div><pre className="debug-pre">{JSON.stringify({ form, diagnostic }, null, 2)}</pre></section></main>
+}
+
+function MenuOverlay({ setMenuOpen, setView }) {
+  const menu = [['dashboard', 'Système'], ['diagnostic', 'Analyse IA'], ['history', 'Historique'], ['garage', 'Connectivité garages'], ['profile', 'Profil'], ['paywall', 'Premium'], ['debug', 'Debug']]
   return (
     <div className="menu-overlay">
-      <button className="close-btn" onClick={onClose}><X size={28} /></button>
+      <button onClick={() => setMenuOpen(false)} className="menu-close"><X size={32} /></button>
       <div className="menu-list">
-        {items.map(([id, label]) => (
-          <button key={id} onClick={() => { setView(id); onClose() }}>
-            {label}<ChevronRight size={20} />
-          </button>
-        ))}
+        {menu.map(([id, label]) => <button key={id} onClick={() => { setView(id); setMenuOpen(false) }}>{label}<ChevronRight /></button>)}
       </div>
-      <div className="menu-footer">
-        <span>v2.0.0-COCKPIT</span>
-        <span>Méco-IA</span>
-      </div>
+      <div className="menu-footer"><span>V.2.5.0-LUXURY-MOCK</span><Power size={20} /></div>
     </div>
   )
 }
 
-// Sparkles not in lucide, substitute with Star
-const Sparkles = Star
-
 export default function App() {
-  const [view, setView] = useState('home')
+  const [view, setView] = useState('dashboard')
   const [menuOpen, setMenuOpen] = useState(false)
-  const [form, setForm] = useState(INITIAL_FORM)
-  const [diag, setDiag] = useState(null)
+  const [diagnostic, setDiagnostic] = useState(null)
   const [history, setHistory] = useState([])
+  const [form, setForm] = useState(initialForm)
 
-  const runAnalysis = () => {
+  const latestDiagnostic = useMemo(() => history[0] || null, [history])
+
+  const runAiAnalysis = () => {
     setView('analysis')
     setTimeout(() => {
-      const result = buildMockDiag(form)
-      setDiag(result)
+      const result = buildMockDiagnostic(form)
+      setDiagnostic(result)
       setHistory(prev => [result, ...prev])
       setView('result')
-    }, 2200)
+    }, 1900)
   }
 
   return (
     <div className="app-shell">
-      <div className="grid-bg" />
-      <div className="blob blob-1" />
-      <div className="blob blob-2" />
-      <Header onMenu={() => setMenuOpen(true)} />
-      {view === 'home' && <Home setView={setView} history={history} />}
-      {view === 'diagnostic' && <DiagnosticForm form={form} setForm={setForm} onAnalyze={runAnalysis} />}
+      <div className="ambient ambient-blue" />
+      <div className="ambient ambient-purple" />
+      <div className="grid-overlay" />
+      <AppHeader onMenu={() => setMenuOpen(true)} />
+
+      {view === 'dashboard' && <Dashboard setView={setView} latestDiagnostic={latestDiagnostic} />}
+      {view === 'diagnostic' && <DiagnosticForm form={form} setForm={setForm} onAnalyze={runAiAnalysis} />}
       {view === 'analysis' && <AnalysisScreen />}
-      {view === 'result' && <ResultScreen diag={diag} setView={setView} onSave={() => {}} />}
+      {view === 'result' && <ResultScreen diagnostic={diagnostic} setView={setView} />}
       {view === 'photo' && <PhotoScreen setView={setView} />}
-      {view === 'audio' && <AudioScreen setView={setView} />}
-      {view === 'video' && <VideoScreen setView={setView} />}
-      {view === 'history' && <HistoryScreen history={history} setView={setView} setDiag={setDiag} />}
+      {view === 'media' && <MediaScreen />}
+      {view === 'history' && <HistoryScreen history={history} setView={setView} setDiagnostic={setDiagnostic} />}
       {view === 'garage' && <GarageScreen />}
       {view === 'profile' && <ProfileScreen setView={setView} />}
-      {view === 'paywall' && <PaywallScreen setView={setView} />}
+      {view === 'paywall' && <PaywallScreen />}
+      {view === 'debug' && <DebugScreen form={form} diagnostic={diagnostic} />}
+
       <BottomNav view={view} setView={setView} />
-      {menuOpen && <MenuOverlay onClose={() => setMenuOpen(false)} setView={setView} />}
+      {menuOpen && <MenuOverlay setMenuOpen={setMenuOpen} setView={setView} />}
     </div>
   )
 }
